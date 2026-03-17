@@ -9,13 +9,13 @@ ca = certifi.where()
 def get_database():
     """
     Returns the MongoDB database object.
-    Cites the MONGO_URI from .streamlit/secrets.toml.
+    Cites the MONGO_URI from .streamlit/secrets.toml[cite: 1489, 1490].
     """
     try:
-        # Accessing secrets as defined in the deployment guide
+        # Accessing secrets as defined in the deployment guide [cite: 1496]
         uri = st.secrets["MONGO_URI"]
         client = MongoClient(uri, tlsCAFile=ca)
-        # Defining the database name specifically for your module
+        # Defining the database name specifically for your module [cite: 1498]
         return client["geriatric_db"]
     except Exception as e:
         st.error(f"Database Connection Failed: {e}")
