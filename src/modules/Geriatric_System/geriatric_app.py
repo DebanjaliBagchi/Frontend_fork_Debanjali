@@ -213,6 +213,13 @@ def _sidebar_patient_selection() -> str | None:
     )
     label, emoji = frailty_label(fi)
 
+    # ── Persist the computed frailty index back to the patients collection ──
+    if patients_coll is not None:
+        patients_coll.update_one(
+            {"patient_id": patient_id},
+            {"$set": {"frailty_index": round(fi, 4)}}
+        )
+
     fi_pct = int(fi * 100)
     color_map = {"Fit": "#2ecc71", "Pre-Frail": "#f39c12", "Frail": "#e74c3c"}
     bar_color = color_map[label]
