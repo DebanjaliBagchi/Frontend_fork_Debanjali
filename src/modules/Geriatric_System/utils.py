@@ -3,6 +3,13 @@ utils.py – Helper functions for the Geriatric System Module.
 Covers: Frailty Index calculation, Morse risk classification, MMSE severity.
 """
 
+"""
+utils.py – Helper functions for the Geriatric System Module.
+Version: 1.1.0
+Last Updated: 2026-03-18
+Author: D
+"""
+
 from database import get_collection
 from datetime import datetime
 
