@@ -23,6 +23,9 @@ def calc_frailty_index(age: int, num_comorbidities: int, fall_history: bool, mms
     Simplified Frailty Index (0.0 – 1.0).
     Based on 4 deficit components that mirror the ER + DFD data sources.
     """
+    if any(v is None for v in [age, num_comorbidities, mmse_score]):
+        return 0.0
+    
     deficits = 0
     total = 4
 
