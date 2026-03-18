@@ -678,6 +678,105 @@ def _tab_alerts(patient_id: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# PROCESS 6.0 – Data Explorer (read-only reference tables)
+# ─────────────────────────────────────────────────────────────────────────────
+def _tab_data_tables():
+    _section_header("🗂️", "Data Explorer", "Read-only reference tables — All Patients · Assessments · Comorbidities · Activity Log")
+
+    # ── 1. All Patients ──────────────────────────────────────────────────────
+    st.markdown("### 👥 All Patients")
+    patients_coll = get_collection("patients")
+    if patients_coll is not None:
+        all_patients = list(patients_coll.find({}, {"_id": 0}))
+        if all_patients:
+            df_p = pd.DataFrame(all_patients)
+            # Reorder columns nicely if they exist
+            preferred_cols = ["patient_id", "name", "age", "frailty_index"]
+            cols = [c for c in preferred_cols if c in df_p.columns] + \
+                   [c for c in df_p.columns if c not in preferred_cols]
+            df_p = df_p[cols]
+            df_p.columns = [c.replace("_", " ").title() for c in df_p.columns]
+            st.dataframe(df_p, use_container_width=True, hide_index=True)
+            st.caption(f"Total patients: **{len(all_patients)}**")
+        else:
+            st.info("No patients registered yet.")
+    else:
+        st.error("Could not connect to the patients collection.")
+
+    st.markdown("---")
+
+    # ── 2. All Assessments ───────────────────────────────────────────────────
+    st.markdown("### 📋 All Assessments (Fall Risk & MMSE)")
+    assessments_coll = get_collection("assessments")
+    if assessments_coll is not None:
+        all_assessments = list(assessments_coll.find({}, {"_id": 0, "morse_components": 0, "mmse_components": 0}))
+        if all_assessments:
+            df_a = pd.DataFrame(all_assessments)
+            if "date" in df_a.columns:
+                df_a["date"] = pd.to_datetime(df_a["date"]).dt.strftime("%d %b %Y %H:%M")
+            preferred_cols = ["patient_id", "type", "score", "date"]
+            cols = [c for c in preferred_cols if c in df_a.columns] + \
+                   [c for c in df_a.columns if c not in preferred_cols]
+            df_a = df_a[cols]
+            df_a.columns = [c.replace("_", " ").title() for c in df_a.columns]
+            st.dataframe(df_a, use_container_width=True, hide_index=True)
+            st.caption(f"Total assessments: **{len(all_assessments)}**")
+        else:
+            st.info("No assessments recorded yet.")
+    else:
+        st.error("Could not connect to the assessments collection.")
+
+    st.markdown("---")
+
+    # ── 3. All Comorbidities ─────────────────────────────────────────────────
+    st.markdown("### 🩺 All Comorbidities")
+    comorbidities_coll = get_collection("comorbidities")
+    if comorbidities_coll is not None:
+        all_comorbidities = list(comorbidities_coll.find({}, {"_id": 0, "notes": 0}))
+        if all_comorbidities:
+            df_c = pd.DataFrame(all_comorbidities)
+            if "diagnosis_date" in df_c.columns:
+                df_c["diagnosis_date"] = pd.to_datetime(df_c["diagnosis_date"]).dt.strftime("%d %b %Y")
+            if "timestamp" in df_c.columns:
+                df_c["timestamp"] = pd.to_datetime(df_c["timestamp"]).dt.strftime("%d %b %Y %H:%M")
+            preferred_cols = ["patient_id", "disease", "disease_code", "severity", "diagnosis_date", "timestamp"]
+            cols = [c for c in preferred_cols if c in df_c.columns] + \
+                   [c for c in df_c.columns if c not in preferred_cols]
+            df_c = df_c[cols]
+            df_c.columns = [c.replace("_", " ").title() for c in df_c.columns]
+            st.dataframe(df_c, use_container_width=True, hide_index=True)
+            st.caption(f"Total comorbidity records: **{len(all_comorbidities)}**")
+        else:
+            st.info("No comorbidities linked yet.")
+    else:
+        st.error("Could not connect to the comorbidities collection.")
+
+    st.markdown("---")
+
+    # ── 4. Activity Log ──────────────────────────────────────────────────────
+    st.markdown("### 📜 Activity Log")
+    log_coll = get_collection("activity_log")
+    if log_coll is not None:
+        # Show the 50 most recent entries
+        all_logs = list(log_coll.find({}, {"_id": 0}).sort("timestamp", -1).limit(50))
+        if all_logs:
+            df_l = pd.DataFrame(all_logs)
+            if "timestamp" in df_l.columns:
+                df_l["timestamp"] = pd.to_datetime(df_l["timestamp"]).dt.strftime("%d %b %Y %H:%M:%S")
+            preferred_cols = ["timestamp", "action", "patient_id", "details"]
+            cols = [c for c in preferred_cols if c in df_l.columns] + \
+                   [c for c in df_l.columns if c not in preferred_cols]
+            df_l = df_l[cols]
+            df_l.columns = [c.replace("_", " ").title() for c in df_l.columns]
+            st.dataframe(df_l, use_container_width=True, hide_index=True)
+            st.caption("Showing the **50 most recent** activity log entries.")
+        else:
+            st.info("No activity logged yet.")
+    else:
+        st.error("Could not connect to the activity_log collection.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
 def run_geriatric_module():
@@ -798,11 +897,12 @@ def run_geriatric_module():
         return
 
     # ── Main tabs (Processes 2–5) ────────────────────────────────────────────
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "🚶 Fall Risk (Morse)",
         "🧠 Cognitive Exam (MMSE)",
         "🩺 Comorbidities",
         "🔔 Alerts & Reports",
+        "🗂️ Data Explorer",
     ])
 
     with tab1:
@@ -816,6 +916,9 @@ def run_geriatric_module():
 
     with tab4:
         _tab_alerts(patient_id)
+
+    with tab5:
+        _tab_data_tables()
 
 
 if __name__ == "__main__":
